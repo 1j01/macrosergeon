@@ -18,7 +18,7 @@ load_image = (src, callback)->
 tile_types =
 	"rgb(32, 140, 179)": "water"
 	"rgb(218, 204, 153)": "sand"
-	"rgb(254, 203, 49)": "wood"
+	"rgb(254, 203, 49)": "wood" # (XXX: represents both the nasal and naval)
 	"rgb(255, 255, 255)": "rock1"
 	"rgb(253, 253, 254)": "rock1" # also (XXX)
 	"rgb(226, 226, 226)": "rock2"
@@ -32,8 +32,8 @@ tile_types =
 
 level = []
 
-# level_image = load_image "level.png", ->
-level_image = load_image "overworld.png", ->
+level_image = load_image "level.png", ->
+# level_image = load_image "overworld.png", ->
 	level_canvas = document.createElement "canvas"
 	level_ctx = level_canvas.getContext "2d"
 	level_ctx.drawImage(level_image, 0, 0)
@@ -48,7 +48,7 @@ level_image = load_image "overworld.png", ->
 				# 	colors.push(color)
 				# tile_type = tile_types[colors.indexOf(color)]
 				tile_type = tile_types[color]
-				{type: tile_type, color, uncovered: no}
+				{type: tile_type, color, uncovered: no, cover_checked: no}
 
 tile_size = 32
 
@@ -86,6 +86,29 @@ collisionAt = (x, y)->
 	else
 		yes
 
+forEachPointOnLine = (x0, y0, x1, y1, callback)->
+	dx = Math.abs(x1 - x0)
+	dy = Math.abs(y1 - y0)
+	sx = if (x0 < x1) then 1 else -1
+	sy = if (y0 < y1) then 1 else -1
+	err = dx-dy
+	loop
+		break if callback(x0, y0) is "break"
+		break if ((x0 is x1) and (y0 is y1))
+		e2 = 2*err
+		if (e2 >-dy) then (err -= dy; x0 += sx)
+		if (e2 < dx) then (err += dx; y0 += sy)
+
+
+collisionLine = (x1, y1, x2, y2)->
+	# for i in [0..1] by 
+	collided = no
+	forEachPointOnLine x1, y1, x2, y2, (x, y)->
+		if collisionAt(x, y)
+			collided = yes
+			"break"
+	collided
+
 class Player
 	constructor: ({@controller, @x=0, @y=0, @z=0})->
 		@moveTimer = 0
@@ -94,25 +117,27 @@ class Player
 		@z_anim = 0
 	step: ->
 		@controller.step()
-		console.log tileAt(@x, @y)?.type, tileAt(@x, @y)?.color
-		move_period = if tileAt(@x, @y)?.type is "water" then 10 else 5
+		# console.log tileAt(@x, @y)?.type, tileAt(@x, @y)?.color
+		in_water = tileAt(@x, @y)?.type is "water"
+		move_period = if in_water then 10 else 5
 		if @moveTimer++ > move_period
 			@moveTimer = 0
 			unless collisionAt(@x + @controller.moveX, @y)
 				@x += @controller.moveX
 			unless collisionAt(@x, @y + @controller.moveY)
 				@y += @controller.moveY
-		movement_smoothing = 3
+		movement_smoothing = if in_water then 5 else 3
 		@x_anim += (@x - @x_anim) / movement_smoothing
 		@y_anim += (@y - @y_anim) / movement_smoothing
 
-player = new Player {x: 200, y: 50, controller: new KeyboardController}
+player = new Player {x: 184, y: 49, controller: new KeyboardController}
 
 view = {center_x: 0, center_y: 0, center_x_to: 0, center_y_to: 0}
 view.center_x = view.center_x_to = player.x
 view.center_y = view.center_y_to = player.y
 
 animate ->
+	return unless level_image.complete
 	
 	player.step()
 	
@@ -133,9 +158,19 @@ animate ->
 	ctx.translate(~~(-view.center_x * tile_size), ~~(-view.center_y * tile_size))
 	for level_row, y in level
 		for tile, x in level_row
-			if not tile.uncovered
+			unless tile.cover_checked
 				if hypot(y - player.y, x - player.x) < 15
-					tile.uncovered = yes
+					unless collisionLine(player.x, player.y, x, y)
+						tile.uncovered = yes
+						tile.cover_checked = yes
+						level[y - 1]?[x]?.uncovered = yes
+						level[y]?[x - 1]?.uncovered = yes
+						level[y + 1]?[x]?.uncovered = yes
+						level[y]?[x + 1]?.uncovered = yes
+						level[y - 1]?[x - 1]?.uncovered = yes
+						level[y - 1]?[x + 1]?.uncovered = yes
+						level[y + 1]?[x - 1]?.uncovered = yes
+						level[y + 1]?[x + 1]?.uncovered = yes
 			if tile.uncovered
 				ctx.fillStyle = tile.color
 				ctx.fillRect(x * tile_size, y * tile_size, tile_size, tile_size)
