@@ -18,7 +18,8 @@ load_image = (src, callback)->
 tile_types =
 	"rgb(32, 140, 179)": "water"
 	"rgb(218, 204, 153)": "sand"
-	"rgb(254, 203, 49)": "wood" # (XXX: represents both the nasal and naval)
+	"rgb(254, 203, 49)": "yellow"
+	"rgb(211, 148, 92)": "wood"
 	"rgb(255, 255, 255)": "rock1"
 	"rgb(253, 253, 254)": "rock1" # also (XXX)
 	"rgb(226, 226, 226)": "rock2"
@@ -172,7 +173,27 @@ animate ->
 						level[y + 1]?[x - 1]?.uncovered = yes
 						level[y + 1]?[x + 1]?.uncovered = yes
 			if tile.uncovered
-				ctx.fillStyle = tile.color
+				switch tile.type
+					when "water"
+						ctx.fillStyle = tile.color
+					when "wood"
+						ctx.fillStyle = "#B16A36"
+					when "gum"
+						ctx.fillStyle = "#954F35"
+					when "rock1"
+						ctx.fillStyle = "rgb(128, 128, 128)"
+					when "rock2"
+						ctx.fillStyle = "rgb(100, 100, 100)"
+					when "rock3"
+						ctx.fillStyle = "rgb(70, 70, 70)"
+					when "rock4"
+						ctx.fillStyle = "rgb(50, 50, 50)"
+					when "rock5"
+						ctx.fillStyle = "rgb(20, 20, 20)"
+					when "lava"
+						ctx.fillStyle = "#500"
+					else
+						ctx.fillStyle = tile.color
 				ctx.fillRect(x * tile_size, y * tile_size, tile_size, tile_size)
 			# else
 			# 	ctx.fillStyle = "black"
