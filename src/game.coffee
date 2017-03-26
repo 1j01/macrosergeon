@@ -1,6 +1,10 @@
 
-level_image = new Image
-level_image.src = "level.png"
+load_image = (src, callback)->
+	image = new Image
+	image.onload = callback
+	image.src = src
+	image
+
 
 tile_types = [
 	"water"
@@ -12,7 +16,9 @@ tile_types = [
 ]
 
 level = []
-level_image.onload = ->
+
+# level_image = load_image "level.png", ->
+level_image = load_image "overworld.png", ->
 	level_canvas = document.createElement "canvas"
 	level_ctx = level_canvas.getContext "2d"
 	level_ctx.drawImage(level_image, 0, 0)
@@ -54,12 +60,18 @@ class KeyboardController
 
 class Player
 	constructor: ({@controller, @x, @y})->
-		
+		@moveTimer = 0
+		@x_to = @x
+		@y_to = @y
 	step: ->
 		@controller.step()
-		@x += @controller.moveX
-		@y += @controller.moveY
-		# @x -= 0.1
+		if @moveTimer++ > 5
+			@moveTimer = 0
+			@x_to += @controller.moveX
+			@y_to += @controller.moveY
+		movement_smoothing = 3
+		@x += (@x_to - @x) / movement_smoothing
+		@y += (@y_to - @y) / movement_smoothing
 
 player = new Player {x: 200, y: 50, controller: new KeyboardController}
 
@@ -98,4 +110,6 @@ animate ->
 			# 	ctx.fillStyle = "black"
 			# 	ctx.fillRect(x * tile_size, y * tile_size, tile_size, tile_size)
 	# ctx.drawImage(level_image, 0, 0)
+	ctx.fillStyle = "#66CC77"
+	ctx.fillRect(player.x * tile_size, player.y * tile_size, tile_size, tile_size)
 	ctx.restore()
