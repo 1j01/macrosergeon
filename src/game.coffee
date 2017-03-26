@@ -6,14 +6,29 @@ load_image = (src, callback)->
 	image
 
 
-tile_types = [
-	"water"
-	"sand"
-	"rock"
-	"low"
-	"idk"
-	"etc"
-]
+# tile_types = [
+# 	"water"
+# 	"um"
+# 	"sand"
+# 	"rock"
+# 	"low"
+# 	"idk"
+# 	"etc"
+# ]
+tile_types =
+	"rgb(32, 140, 179)": "water"
+	"rgb(218, 204, 153)": "sand"
+	"rgb(254, 203, 49)": "wood"
+	"rgb(255, 255, 255)": "rock1"
+	"rgb(253, 253, 254)": "rock1" # also (XXX)
+	"rgb(226, 226, 226)": "rock2"
+	"rgb(171, 171, 171)": "rock3"
+	"rgb(100, 100, 100)": "rock4"
+	"rgb(8, 3, 5)": "rock5"
+	"rgb(207, 38, 85)": "gum"
+	"rgb(211, 28, 24)": "lava"
+	"rgb(254, 67, 25)": "orange"
+	"rgb(69, 30, 56)": "purple"
 
 level = []
 
@@ -23,16 +38,17 @@ level_image = load_image "overworld.png", ->
 	level_ctx = level_canvas.getContext "2d"
 	level_ctx.drawImage(level_image, 0, 0)
 	id = level_ctx.getImageData(0, 0, level_canvas.width, level_canvas.height)
-	colors = []
+	# colors = []
 	level =
 		for y in [0..id.height]
 			for x in [0..id.width]
 				offset = (y * id.width + x) * 4
 				color = "rgb(#{id.data[offset + 0]}, #{id.data[offset + 1]}, #{id.data[offset + 2]})"
-				if colors.indexOf(color) is -1
-					colors.push(color)
-				tile_type = tile_types[colors.indexOf(color)]
-				{type: tile_type, color: color, uncovered: no}
+				# if colors.indexOf(color) is -1
+				# 	colors.push(color)
+				# tile_type = tile_types[colors.indexOf(color)]
+				tile_type = tile_types[color]
+				{type: tile_type, color, uncovered: no}
 
 tile_size = 32
 
@@ -41,7 +57,6 @@ class KeyboardController
 		@keys = {}
 		@prev_keys = {}
 		window.addEventListener "keydown", (e)=>
-			console.log e.keyCode
 			@keys[e.keyCode] = on
 		window.addEventListener "keyup", (e)=>
 			delete @keys[e.keyCode]
@@ -58,20 +73,38 @@ class KeyboardController
 		for k, v of @keys
 			@prev_keys[k] = v
 
+tileAt = (x, y)->
+	level[~~y]?[~~x]
+
+collisionAt = (x, y)->
+	tile = tileAt(x, y)
+	if tile?
+		if tile.type in ["rock1", "rock2", "rock3", "rock4", "rock5"]
+			yes
+		else
+			no
+	else
+		yes
+
 class Player
-	constructor: ({@controller, @x, @y})->
+	constructor: ({@controller, @x=0, @y=0, @z=0})->
 		@moveTimer = 0
-		@x_to = @x
-		@y_to = @y
+		@x_anim = @x
+		@y_anim = @y
+		@z_anim = 0
 	step: ->
 		@controller.step()
-		if @moveTimer++ > 5
+		console.log tileAt(@x, @y)?.type, tileAt(@x, @y)?.color
+		move_period = if tileAt(@x, @y)?.type is "water" then 10 else 5
+		if @moveTimer++ > move_period
 			@moveTimer = 0
-			@x_to += @controller.moveX
-			@y_to += @controller.moveY
+			unless collisionAt(@x + @controller.moveX, @y)
+				@x += @controller.moveX
+			unless collisionAt(@x, @y + @controller.moveY)
+				@y += @controller.moveY
 		movement_smoothing = 3
-		@x += (@x_to - @x) / movement_smoothing
-		@y += (@y_to - @y) / movement_smoothing
+		@x_anim += (@x - @x_anim) / movement_smoothing
+		@y_anim += (@y - @y_anim) / movement_smoothing
 
 player = new Player {x: 200, y: 50, controller: new KeyboardController}
 
@@ -101,7 +134,7 @@ animate ->
 	for level_row, y in level
 		for tile, x in level_row
 			if not tile.uncovered
-				if hypot(y - player.y, x - player.x) < 5
+				if hypot(y - player.y, x - player.x) < 15
 					tile.uncovered = yes
 			if tile.uncovered
 				ctx.fillStyle = tile.color
@@ -111,5 +144,5 @@ animate ->
 			# 	ctx.fillRect(x * tile_size, y * tile_size, tile_size, tile_size)
 	# ctx.drawImage(level_image, 0, 0)
 	ctx.fillStyle = "#66CC77"
-	ctx.fillRect(player.x * tile_size, player.y * tile_size, tile_size, tile_size)
+	ctx.fillRect(player.x_anim * tile_size, player.y_anim * tile_size, tile_size, tile_size)
 	ctx.restore()
