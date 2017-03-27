@@ -174,10 +174,17 @@ draw_world = ->
 	ctx.fillStyle = "#66CC77"
 	ctx.fillRect(player.x_anim * tile_size, player.y_anim * tile_size, tile_size, tile_size)
 
+boat_image = load_image "images/story/boat.png"
+wave_image = load_image "images/story/wave.png"
+fist_image = load_image "images/story/water-fist.png"
+
 screen = null
 screens = {
 	"Title": {
 		draw: ->
+			ctx.fillStyle = "black"
+			ctx.fillRect 0, 0, canvas.width, canvas.height
+			
 			ctx.save()
 			ctx.fillStyle = "white"
 			ctx.font = "80px Arial"
@@ -192,16 +199,95 @@ screens = {
 			
 			keyboard_controller.step()
 			if Object.keys(keyboard_controller.keys).length > 0
-				screen = screens["Game"]
+				screen = screens["Story"]
 	}
 	"Story": {
+		steps: [
+			{
+				text: "Look at me, I'm minding my own business."
+				boat: {x: 0, y: 0}
+			}
+			{
+				text: "Oh no, the waves! The waves are attacking the ship, almost antagonistically!"
+				boat: {x: -150, y: 0}
+				wave: {x: 200, y: 0}
+			}
+			{
+				text: "..."
+				boat: {x: -150, y: 0}
+				wave: {x: 200, y: 0}
+				fist: {x: 150, y: 0}
+			}
+			{
+				text: "..."
+				boat: {x: -200, y: 0}
+				wave: {x: 200, y: 0}
+				fist: {x: -20, y: 0}
+			}
+			{
+				text: "..."
+				boat: {x: -450, y: 0}
+				wave: {x: 200, y: 0}
+				fist: {x: -20, y: 0}
+			}
+			{
+				text: "..."
+				boat: {x: -700, y: 0}
+				wave: {x: 200, y: 0}
+				fist: {x: -20, y: 0}
+			}
+			{
+				text: "Yep, that's the story line."
+				boat: {x: -1000, y: 0}
+				wave: {x: 200, y: 0}
+				fist: {x: -20, y: 0}
+			}
+			{
+				text: "And there also isn't a game."
+			}
+		]
+		step_index: 0
 		draw: ->
-			ctx.save()
+			ctx.fillStyle = "#28484E"
+			ctx.fillRect 0, 0, canvas.width, canvas.height
 			
+			keyboard_controller.step()
+			if keyboard_controller.enter
+				@step_index += 1
+				if @step_index >= @steps.length
+					@step_index = 0
+					screen = screens["Game"]
+					return
+			
+			step = @steps[@step_index]
+			{wave, boat, fist} = step
+			
+			draw_actor = (actor, image)->
+				ctx.save()
+				ctx.translate(actor.x, actor.y)
+				scale = 0.5
+				ctx.scale(scale, scale)
+				ctx.drawImage(image, -image.width/2, -image.height/2)
+				ctx.restore()
+			
+			ctx.save()
+			ctx.translate(~~(canvas.width / 2), ~~(canvas.height / 2))
+			draw_actor(wave, wave_image) if wave
+			draw_actor(boat, boat_image) if boat
+			draw_actor(fist, fist_image) if fist
+			ctx.restore()
+			
+			ctx.save()
+			ctx.fillStyle = "white"
+			ctx.font = "30px Arial"
+			ctx.textAlign = "center"
+			ctx.fillText(step.text ? "", canvas.width/2, canvas.height*5/6)
 			ctx.restore()
 	}
 	"Game": {
 		draw: ->
+			ctx.fillStyle = "black"
+			ctx.fillRect 0, 0, canvas.width, canvas.height
 			
 			return unless level_image.complete
 			
@@ -222,6 +308,4 @@ screens = {
 screen = screens["Title"]
 
 animate ->
-	ctx.fillStyle = "black"
-	ctx.fillRect 0, 0, canvas.width, canvas.height
 	screen.draw()
