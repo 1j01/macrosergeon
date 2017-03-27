@@ -210,10 +210,12 @@ screens = {
 			@boat = {x: 0, y: 0, r: 0, xv: 0, yv: 0, rv: 0, opacity: 0}
 			@wave = {x: 0, y: 0, r: 0, xv: 0, yv: 0, rv: 0, opacity: 0}
 			@fist = {x: 0, y: 0, r: 0, xv: 0, yv: 0, rv: 0, opacity: 0}
-			@bg = undefined
+			@fg = "white"
+			@bg = "black"
 		frames: [
 			{
 				bg: "#28484E"
+				fg: "white"
 				text: "Sure is a fine day for sailing."
 				boat: {x: 0, y: 0}
 			}
@@ -233,7 +235,7 @@ screens = {
 				fist: {x: 150, y: 0}
 			}
 			{
-				text: "(Yep.)"
+				text: "..."
 				# XXX the way this is done because it constantly sets the properties
 				# boat: {x: -150, y: 0}
 				boat: {y: 0}
@@ -246,19 +248,31 @@ screens = {
 				boat: {y: 0, xv: -5}
 			}
 			{
-				bg: "#E9E0BE"
-				text: "k where am i?"
+				bg: "black"
+				fg: "white"
+			}
+			{
+				bg: "#1F1F1F"
+				fg: "gray"
+				text: "Where am I?"
 			}
 			{
 				bg: "#E9E0BE"
-				text: "an island i guess"
+				fg: "#555"
+				text: "An island I guess..."
+			}
+			{}
+			{
+				fg: "black"
+				text: "Hey, this island is kinda weirdly shaped"
 			}
 			{
-				text: "an island i guess"
+				text: "Almost anatomically"
 			}
 			{
-				bg: "#000"
-				text: "(But yeah, there is no game here. You can explore a bit though.)"
+				bg: "black"
+				fg: "white"
+				text: "(Yeah, so there isn't actually a game here. You can explore a bit though.)"
 			}
 		]
 		step_index: 0
@@ -273,6 +287,7 @@ screens = {
 			
 			frame = @frames[@step_index]
 			@bg = frame.bg if frame.bg
+			@fg = frame.fg if frame.fg
 			
 			ctx.fillStyle = @bg
 			ctx.fillRect 0, 0, canvas.width, canvas.height
@@ -305,7 +320,7 @@ screens = {
 			ctx.restore()
 			
 			ctx.save()
-			ctx.fillStyle = "white"
+			ctx.fillStyle = @fg
 			ctx.font = "30px Arial"
 			ctx.textAlign = "center"
 			ctx.fillText(frame.text ? "", canvas.width/2, canvas.height*5/6)
