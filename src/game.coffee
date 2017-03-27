@@ -55,7 +55,7 @@ class KeyboardController
 	step: ->
 		@moveX = Math.min(1, Math.max(-1, @keys[39]? - @keys[37]? + @keys[68]? - @keys[65]?))
 		@moveY = Math.min(1, Math.max(-1, @keys[40]? - @keys[38]? + @keys[83]? - @keys[87]?))
-		@enter = @justPressed(13)
+		@enter = @justPressed(13) or @justPressed(32)
 		
 		@prev_keys = {}
 		for k, v of @keys
@@ -179,6 +179,10 @@ wave_image = load_image "images/story/wave.png"
 fist_image = load_image "images/story/water-fist.png"
 
 screen = null
+go_to_screen = (name)->
+	screen = screens[name]
+	screen.init?()
+
 screens = {
 	"Title": {
 		draw: ->
@@ -199,12 +203,20 @@ screens = {
 			
 			keyboard_controller.step()
 			if Object.keys(keyboard_controller.keys).length > 0
-				screen = screens["Story"]
+				go_to_screen "Story"
 	}
 	"Story": {
-		steps: [
+		init: ->
+			@boat = {x: 0, y: 0, r: 0, xv: 0, yv: 0, rv: 0, opacity: 0}
+			@wave = {x: 0, y: 0, r: 0, xv: 0, yv: 0, rv: 0, opacity: 0}
+			@fist = {x: 0, y: 0, r: 0, xv: 0, yv: 0, rv: 0, opacity: 0}
+		frames: [
 			{
-				text: "Look at me, I'm minding my own business."
+				text: "Sure is a fine day for sailing."
+				boat: {x: 0, y: 0}
+			}
+			{
+				text: "I'm glad we brought this sailboat out here for sailing."
 				boat: {x: 0, y: 0}
 			}
 			{
@@ -214,33 +226,22 @@ screens = {
 			}
 			{
 				text: "..."
-				boat: {x: -150, y: 0}
+				boat: {x: -150, y: 0, xv: -5, r: 0, rv: -0.1}
 				wave: {x: 200, y: 0}
 				fist: {x: 150, y: 0}
 			}
 			{
-				text: "..."
-				boat: {x: -200, y: 0}
-				wave: {x: 200, y: 0}
-				fist: {x: -20, y: 0}
-			}
-			{
-				text: "..."
-				boat: {x: -450, y: 0}
-				wave: {x: 200, y: 0}
-				fist: {x: -20, y: 0}
-			}
-			{
-				text: "..."
-				boat: {x: -700, y: 0}
+				text: "Yep, that's the story line."
+				# XXX the way this is done because it constantly sets the properties
+				# boat: {x: -150, y: 0}
+				boat: {y: 0}
 				wave: {x: 200, y: 0}
 				fist: {x: -20, y: 0}
 			}
 			{
 				text: "Yep, that's the story line."
-				boat: {x: -1000, y: 0}
-				wave: {x: 200, y: 0}
-				fist: {x: -20, y: 0}
+				# boat: {x: 550, y: 0, xv: -5}
+				boat: {y: 0, xv: -5}
 			}
 			{
 				text: "And there also isn't a game."
@@ -254,34 +255,45 @@ screens = {
 			keyboard_controller.step()
 			if keyboard_controller.enter
 				@step_index += 1
-				if @step_index >= @steps.length
+				if @step_index >= @frames.length
 					@step_index = 0
-					screen = screens["Game"]
+					go_to_screen "Game"
 					return
 			
-			step = @steps[@step_index]
-			{wave, boat, fist} = step
+			frame = @frames[@step_index]
 			
-			draw_actor = (actor, image)->
+			draw_actor = (name, image)=>
+				actor_frame = frame[name]
+				actor = @[name]
+				actor.x += actor.xv
+				actor.y += actor.yv
+				actor.r += actor.rv
+				if actor_frame
+					for k, v of actor_frame
+						actor[k] = v
+				opacity_to = +(actor_frame?)
+				actor.opacity += (opacity_to - actor.opacity) / 5
 				ctx.save()
 				ctx.translate(actor.x, actor.y)
 				scale = 0.5
 				ctx.scale(scale, scale)
+				ctx.rotate(actor.r)
+				ctx.globalAlpha = actor.opacity
 				ctx.drawImage(image, -image.width/2, -image.height/2)
 				ctx.restore()
 			
 			ctx.save()
 			ctx.translate(~~(canvas.width / 2), ~~(canvas.height / 2))
-			draw_actor(wave, wave_image) if wave
-			draw_actor(boat, boat_image) if boat
-			draw_actor(fist, fist_image) if fist
+			draw_actor("wave", wave_image)
+			draw_actor("boat", boat_image)
+			draw_actor("fist", fist_image)
 			ctx.restore()
 			
 			ctx.save()
 			ctx.fillStyle = "white"
 			ctx.font = "30px Arial"
 			ctx.textAlign = "center"
-			ctx.fillText(step.text ? "", canvas.width/2, canvas.height*5/6)
+			ctx.fillText(frame.text ? "", canvas.width/2, canvas.height*5/6)
 			ctx.restore()
 	}
 	"Game": {
@@ -305,7 +317,7 @@ screens = {
 			ctx.restore()
 	}
 }
-screen = screens["Title"]
+go_to_screen "Title"
 
 animate ->
 	screen.draw()
