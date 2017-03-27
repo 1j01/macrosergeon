@@ -117,32 +117,14 @@ class Player
 		@x_anim += (@x - @x_anim) / movement_smoothing
 		@y_anim += (@y - @y_anim) / movement_smoothing
 
-player = new Player {x: 184, y: 49, controller: new KeyboardController}
+keyboard_controller = new KeyboardController
+player = new Player {x: 184, y: 49, controller: keyboard_controller}
 
 view = {center_x: 0, center_y: 0, center_x_to: 0, center_y_to: 0}
 view.center_x = view.center_x_to = player.x
 view.center_y = view.center_y_to = player.y
 
-animate ->
-	return unless level_image.complete
-	
-	player.step()
-	
-	view.center_x_to = player.x
-	view.center_y_to = player.y
-	view.center_x += (view.center_x_to - view.center_x) / 10
-	view.center_y += (view.center_y_to - view.center_y) / 10
-	
-	{width: w, height: h} = canvas
-	
-	ctx.fillStyle = "black"
-	ctx.fillRect 0, 0, w, h
-
-	ctx.fillStyle = "white"
-	
-	ctx.save()
-	ctx.translate(~~(w / 2), ~~(h / 2))
-	ctx.translate(~~(-view.center_x * tile_size), ~~(-view.center_y * tile_size))
+draw_world = ->
 	for level_row, y in level
 		for tile, x in level_row
 			unless tile.cover_checked
@@ -191,5 +173,55 @@ animate ->
 				ctx.restore()
 	ctx.fillStyle = "#66CC77"
 	ctx.fillRect(player.x_anim * tile_size, player.y_anim * tile_size, tile_size, tile_size)
-	ctx.drawImage(level_image, 0, 0)
-	ctx.restore()
+
+screen = null
+screens = {
+	"Title": {
+		draw: ->
+			ctx.save()
+			ctx.fillStyle = "white"
+			ctx.font = "80px Arial"
+			ctx.textAlign = "center"
+			ctx.fillText("Macrosergeon", canvas.width/2, 150)
+			ctx.font = "20px Arial"
+			ctx.fillText("NOTE: There's no actual game, so set your expectations ⇝ LO.", canvas.width/2, 250)
+			ctx.font = "30px Arial"
+			ctx.fillStyle = "rgba(255, 255, 255, 0.5)"
+			ctx.fillText("Press the Any key to be kin.", canvas.width/2, 350)
+			ctx.restore()
+			
+			keyboard_controller.step()
+			if Object.keys(keyboard_controller.keys).length > 0
+				screen = screens["Game"]
+	}
+	"Story": {
+		draw: ->
+			ctx.save()
+			
+			ctx.restore()
+	}
+	"Game": {
+		draw: ->
+			
+			return unless level_image.complete
+			
+			player.step()
+			
+			view.center_x_to = player.x
+			view.center_y_to = player.y
+			view.center_x += (view.center_x_to - view.center_x) / 10
+			view.center_y += (view.center_y_to - view.center_y) / 10
+			
+			ctx.save()
+			ctx.translate(~~(canvas.width / 2), ~~(canvas.height / 2))
+			ctx.translate(~~(-view.center_x * tile_size), ~~(-view.center_y * tile_size))
+			draw_world()
+			ctx.restore()
+	}
+}
+screen = screens["Title"]
+
+animate ->
+	ctx.fillStyle = "black"
+	ctx.fillRect 0, 0, canvas.width, canvas.height
+	screen.draw()
