@@ -178,7 +178,7 @@ boat_image = load_image "images/story/boat.png"
 wave_image = load_image "images/story/wave.png"
 fist_image = load_image "images/story/water-fist.png"
 
-screen = null
+screen = undefined
 go_to_screen = (name)->
 	screen = screens[name]
 	screen.init?()
@@ -210,8 +210,10 @@ screens = {
 			@boat = {x: 0, y: 0, r: 0, xv: 0, yv: 0, rv: 0, opacity: 0}
 			@wave = {x: 0, y: 0, r: 0, xv: 0, yv: 0, rv: 0, opacity: 0}
 			@fist = {x: 0, y: 0, r: 0, xv: 0, yv: 0, rv: 0, opacity: 0}
+			@bg = undefined
 		frames: [
 			{
+				bg: "#28484E"
 				text: "Sure is a fine day for sailing."
 				boat: {x: 0, y: 0}
 			}
@@ -231,7 +233,7 @@ screens = {
 				fist: {x: 150, y: 0}
 			}
 			{
-				text: "Yep, that's the story line."
+				text: "(Yep.)"
 				# XXX the way this is done because it constantly sets the properties
 				# boat: {x: -150, y: 0}
 				boat: {y: 0}
@@ -239,19 +241,28 @@ screens = {
 				fist: {x: -20, y: 0}
 			}
 			{
-				text: "Yep, that's the story line."
+				text: "(Yep.)"
 				# boat: {x: 550, y: 0, xv: -5}
 				boat: {y: 0, xv: -5}
 			}
 			{
-				text: "And there also isn't a game."
+				bg: "#E9E0BE"
+				text: "k where am i?"
+			}
+			{
+				bg: "#E9E0BE"
+				text: "an island i guess"
+			}
+			{
+				text: "an island i guess"
+			}
+			{
+				bg: "#000"
+				text: "(But yeah, there is no game here. You can explore a bit though.)"
 			}
 		]
 		step_index: 0
 		draw: ->
-			ctx.fillStyle = "#28484E"
-			ctx.fillRect 0, 0, canvas.width, canvas.height
-			
 			keyboard_controller.step()
 			if keyboard_controller.enter
 				@step_index += 1
@@ -261,6 +272,10 @@ screens = {
 					return
 			
 			frame = @frames[@step_index]
+			@bg = frame.bg if frame.bg
+			
+			ctx.fillStyle = @bg
+			ctx.fillRect 0, 0, canvas.width, canvas.height
 			
 			draw_actor = (name, image)=>
 				actor_frame = frame[name]
