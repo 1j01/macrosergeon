@@ -18,7 +18,7 @@ load_image = (src, callback)->
 tile_types =
 	"rgb(32, 140, 179)": "water"
 	"rgb(218, 204, 153)": "sand"
-	"rgb(254, 203, 49)": "yellow"
+	"rgb(254, 203, 49)": "grass"
 	"rgb(211, 148, 92)": "wood"
 	"rgb(255, 255, 255)": "rock1"
 	"rgb(253, 253, 254)": "rock1" # also (XXX)
@@ -49,7 +49,7 @@ level_image = load_image "level.png", ->
 				# 	colors.push(color)
 				# tile_type = tile_types[colors.indexOf(color)]
 				tile_type = tile_types[color]
-				{type: tile_type, color, uncovered: no, cover_checked: no}
+				{type: tile_type, color, uncovered: no, cover_checked: no, uncovered_anim: 0}
 
 tile_size = 32
 
@@ -173,9 +173,16 @@ animate ->
 						level[y + 1]?[x - 1]?.uncovered = yes
 						level[y + 1]?[x + 1]?.uncovered = yes
 			if tile.uncovered
+				ctx.save()
+				tile.uncovered_anim += (1 - tile.uncovered_anim) / 10
+				ctx.globalAlpha = tile.uncovered_anim
 				switch tile.type
 					when "water"
 						ctx.fillStyle = tile.color
+					when "sand"
+						ctx.fillStyle = tile.color
+					when "grass"
+						ctx.fillStyle = "#205120"
 					when "wood"
 						ctx.fillStyle = "#B16A36"
 					when "gum"
@@ -195,6 +202,7 @@ animate ->
 					else
 						ctx.fillStyle = tile.color
 				ctx.fillRect(x * tile_size, y * tile_size, tile_size, tile_size)
+				ctx.restore()
 			# else
 			# 	ctx.fillStyle = "black"
 			# 	ctx.fillRect(x * tile_size, y * tile_size, tile_size, tile_size)
