@@ -6,22 +6,13 @@ load_image = (src, callback)->
 	image
 
 
-# tile_types = [
-# 	"water"
-# 	"um"
-# 	"sand"
-# 	"rock"
-# 	"low"
-# 	"idk"
-# 	"etc"
-# ]
 tile_types =
 	"rgb(32, 140, 179)": "water"
 	"rgb(218, 204, 153)": "sand"
 	"rgb(254, 203, 49)": "grass"
 	"rgb(211, 148, 92)": "wood"
 	"rgb(255, 255, 255)": "rock1"
-	"rgb(253, 253, 254)": "rock1" # also (XXX)
+	"rgb(253, 253, 254)": "rock1" # XXX: slightly different colors of white for this type
 	"rgb(226, 226, 226)": "rock2"
 	"rgb(171, 171, 171)": "rock3"
 	"rgb(100, 100, 100)": "rock4"
@@ -33,21 +24,17 @@ tile_types =
 
 level = []
 
-level_image = load_image "level.png", ->
-# level_image = load_image "overworld.png", ->
+level_image = load_image "images/map/level.png", ->
+# level_image = load_image "images/map/overworld.png", ->
 	level_canvas = document.createElement "canvas"
 	level_ctx = level_canvas.getContext "2d"
 	level_ctx.drawImage(level_image, 0, 0)
 	id = level_ctx.getImageData(0, 0, level_canvas.width, level_canvas.height)
-	# colors = []
 	level =
 		for y in [0..id.height]
 			for x in [0..id.width]
 				offset = (y * id.width + x) * 4
 				color = "rgb(#{id.data[offset + 0]}, #{id.data[offset + 1]}, #{id.data[offset + 2]})"
-				# if colors.indexOf(color) is -1
-				# 	colors.push(color)
-				# tile_type = tile_types[colors.indexOf(color)]
 				tile_type = tile_types[color]
 				{type: tile_type, color, uncovered: no, cover_checked: no, uncovered_anim: 0}
 
@@ -102,7 +89,6 @@ forEachPointOnLine = (x0, y0, x1, y1, callback)->
 
 
 collisionLine = (x1, y1, x2, y2)->
-	# for i in [0..1] by 
 	collided = no
 	forEachPointOnLine x1, y1, x2, y2, (x, y)->
 		if collisionAt(x, y)
@@ -203,10 +189,7 @@ animate ->
 						ctx.fillStyle = tile.color
 				ctx.fillRect(x * tile_size, y * tile_size, tile_size, tile_size)
 				ctx.restore()
-			# else
-			# 	ctx.fillStyle = "black"
-			# 	ctx.fillRect(x * tile_size, y * tile_size, tile_size, tile_size)
-	# ctx.drawImage(level_image, 0, 0)
 	ctx.fillStyle = "#66CC77"
 	ctx.fillRect(player.x_anim * tile_size, player.y_anim * tile_size, tile_size, tile_size)
+	ctx.drawImage(level_image, 0, 0)
 	ctx.restore()
