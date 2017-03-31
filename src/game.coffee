@@ -74,6 +74,9 @@ collisionAt = (x, y)->
 	else
 		yes
 
+freeAt = (x, y)->
+	not collisionAt(x, y)
+
 forEachPointOnLine = (x0, y0, x1, y1, callback)->
 	dx = Math.abs(x1 - x0)
 	dy = Math.abs(y1 - y0)
@@ -109,10 +112,19 @@ class Player
 		move_period = if in_water then 10 else 5
 		if @moveTimer++ > move_period
 			@moveTimer = 0
-			unless collisionAt(@x + @controller.moveX, @y)
-				@x += @controller.moveX
-			unless collisionAt(@x, @y + @controller.moveY)
-				@y += @controller.moveY
+			if freeAt(@x + @controller.moveX, @y + @controller.moveY)
+				unless (
+					collisionAt(@x + @controller.moveX, @y) and
+					collisionAt(@x, @y + @controller.moveY)
+				)
+					@x += @controller.moveX
+					@y += @controller.moveY
+			else
+				# NOTE: asymmetrical behavior when moving diagonally toward a corner
+				if freeAt(@x + @controller.moveX, @y)
+					@x += @controller.moveX
+				else if freeAt(@x, @y + @controller.moveY)
+					@y += @controller.moveY
 		movement_smoothing = if in_water then 5 else 3
 		@x_anim += (@x - @x_anim) / movement_smoothing
 		@y_anim += (@y - @y_anim) / movement_smoothing
